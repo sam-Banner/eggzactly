@@ -2,6 +2,7 @@ import { MessProvider } from '@/context/MessContext';
 import EggTray from '@/components/EggTray';
 import MemberPanel from '@/components/MemberPanel';
 import TrayControls from '@/components/TrayControls';
+import SnakeCanvas from '@/components/SnakeCanvas';
 import { Egg } from 'lucide-react';
 
 const Index = () => {
@@ -9,8 +10,8 @@ const Index = () => {
     <MessProvider>
       <div className="min-h-screen bg-background">
         {/* Header */}
-        <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10">
-          <div className="container max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
+        <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-20">
+          <div className="container max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
             <div className="bg-primary rounded-xl p-2">
               <Egg className="h-5 w-5 text-primary-foreground" />
             </div>
@@ -22,15 +23,22 @@ const Index = () => {
         </header>
 
         {/* Main */}
-        <main className="container max-w-5xl mx-auto px-4 py-6">
+        <main className="container max-w-6xl mx-auto px-4 py-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Left: Tray */}
-            <div className="lg:col-span-5">
-              <EggTray />
+            {/* Center: Tray + Snake arena */}
+            <div className="lg:col-span-6 flex items-start justify-center">
+              <div className="relative w-full max-w-[500px] aspect-[3/2]">
+                {/* Snake animation layer */}
+                <SnakeCanvas />
+                {/* Tray centered on top */}
+                <div className="absolute inset-0 flex items-center justify-center z-0">
+                  <EggTray />
+                </div>
+              </div>
             </div>
 
             {/* Right: Members + Controls */}
-            <div className="lg:col-span-7 flex flex-col gap-6">
+            <div className="lg:col-span-6 flex flex-col gap-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <MemberPanel />
                 <TrayControls />
