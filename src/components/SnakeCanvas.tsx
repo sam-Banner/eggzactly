@@ -24,13 +24,23 @@ const CANVAS_W = 600;
 const CANVAS_H = 400;
 const TRAY_CX = CANVAS_W / 2;
 const TRAY_CY = CANVAS_H / 2;
-const TRAY_W = 200;
-const TRAY_H = 240;
 const SEG_SPACING = 8;
 const BASE_SEGMENTS = 12;
 const SEGMENTS_PER_EGG = 3;
 
-const SnakeCanvas = () => {
+// Must match EggTray layout: p-3 (12px), cells 34x34, gap-1.5 (6px)
+const TRAY_PADDING = 12;
+const CELL_SIZE = 34;
+const CELL_GAP = 6;
+const CELL_STEP = CELL_SIZE + CELL_GAP; // 40
+const CELL_CENTER_OFFSET = CELL_SIZE / 2; // 17
+const FIRST_CELL_OFFSET = TRAY_PADDING + CELL_CENTER_OFFSET; // 29
+
+interface SnakeCanvasProps {
+  trayContainerRef: React.RefObject<HTMLDivElement | null>;
+}
+
+const SnakeCanvas = ({ trayContainerRef }: SnakeCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const snakesRef = useRef<Snake[]>([]);
   const animRef = useRef<number>(0);
@@ -83,7 +93,7 @@ const SnakeCanvas = () => {
     snakesRef.current = newSnakes;
   }, [members]);
 
-  // Handle eat events - send snake to tray
+  // Handle eat events - send snake to tray (use actual DOM positions for accurate targeting)
   useEffect(() => {
     if (!lastEatEvent || lastEatEvent.timestamp === prevEventRef.current) return;
     prevEventRef.current = lastEatEvent.timestamp;
@@ -91,16 +101,55 @@ const SnakeCanvas = () => {
     const snake = snakesRef.current.find(s => s.memberId === lastEatEvent.memberId);
     if (!snake) return;
 
-    // Calculate egg position on tray
     const row = Math.floor(lastEatEvent.eggIndex / 5);
     const col = lastEatEvent.eggIndex % 5;
-    const eggX = TRAY_CX - TRAY_W / 2 + 20 + col * (TRAY_W / 5);
-    const eggY = TRAY_CY - TRAY_H / 2 + 20 + row * (TRAY_H / 6);
 
-    snake.targetX = eggX;
-    snake.targetY = eggY;
-    snake.state = 'hunting';
-    snake.speed = 5;
+    const applyTarget = (eggX: number, eggY: number) => {
+      snake.targetX = eggX;
+      snake.targetY = eggY;
+      snake.state = 'hunting';
+      snake.speed = 5;
+    };
+
+    const computeFromDOM = () => {
+      const canvas = canvasRef.current;
+      const trayEl = trayContainerRef.current;
+      if (!canvas || !trayEl) return false;
+
+      // Egg center in tray-container coords (matches EggTray: p-3, 34px cells, gap-1.5)
+      const eggLocalX = FIRST_CELL_OFFSET + col * CELL_STEP;
+      const eggLocalY = FIRST_CELL_OFFSET + row * CELL_STEP;
+
+      const trayRect = trayEl.getBoundingClientRect();
+      const canvasRect = canvas.getBoundingClientRect();
+
+      // Viewport position of egg center
+      const viewportX = trayRect.left + eggLocalX;
+      const viewportY = trayRect.top + eggLocalY;
+
+      // Convert to canvas pixel coordinates (canvas may be scaled/stretched)
+      const scaleX = CANVAS_W / canvasRect.width;
+      const scaleY = CANVAS_H / canvasRect.height;
+      const eggX = (viewportX - canvasRect.left) * scaleX;
+      const eggY = (viewportY - canvasRect.top) * scaleY;
+
+      applyTarget(eggX, eggY);
+      return true;
+    };
+
+    // Defer to next frame so DOM has finished layout
+    const rafId = requestAnimationFrame(() => {
+      if (!computeFromDOM()) {
+        // Fallback if refs not ready yet (e.g. initial hydration)
+        const fallbackTrayW = 200;
+        const fallbackTrayH = 240;
+        applyTarget(
+          TRAY_CX - fallbackTrayW / 2 + FIRST_CELL_OFFSET + col * CELL_STEP,
+          TRAY_CY - fallbackTrayH / 2 + FIRST_CELL_OFFSET + row * CELL_STEP
+        );
+      }
+    });
+    return () => cancelAnimationFrame(rafId);
   }, [lastEatEvent]);
 
   const draw = useCallback(() => {
