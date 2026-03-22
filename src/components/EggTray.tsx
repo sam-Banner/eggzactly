@@ -1,6 +1,10 @@
 import { useMessContext } from '@/context/MessContext';
 
-const EggTray = () => {
+interface EggTrayProps {
+  trayContainerRef: React.RefObject<HTMLDivElement | null>;
+}
+
+const EggTray = ({ trayContainerRef }: EggTrayProps) => {
   const { eggs, members } = useMessContext();
 
   const getOwnerColor = (ownerId: string | null) => {
@@ -19,7 +23,7 @@ const EggTray = () => {
         </span>
       </div>
 
-      <div className="tray-container w-[220px] mx-auto p-3">
+      <div ref={trayContainerRef} className="tray-container w-[220px] mx-auto p-3">
         <div className="grid grid-cols-5 gap-1.5">
           {eggs.map((egg) => (
             <div key={egg.index} className="tray-cell flex items-center justify-center w-[34px] h-[34px]">

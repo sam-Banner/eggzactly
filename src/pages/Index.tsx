@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { MessProvider } from '@/context/MessContext';
 import EggTray from '@/components/EggTray';
 import MemberPanel from '@/components/MemberPanel';
@@ -6,6 +7,8 @@ import SnakeCanvas from '@/components/SnakeCanvas';
 import { Egg } from 'lucide-react';
 
 const Index = () => {
+  const trayContainerRef = useRef<HTMLDivElement | null>(null);
+
   return (
     <MessProvider>
       <div className="h-screen flex flex-col bg-background overflow-hidden">
@@ -28,11 +31,11 @@ const Index = () => {
             <div className="relative w-full max-w-[500px] lg:max-w-[400px]">
               {/* Snake animation layer */}
               <div className="absolute inset-0 overflow-hidden">
-                <SnakeCanvas />
+                <SnakeCanvas trayContainerRef={trayContainerRef} />
               </div>
               {/* Tray content flows naturally */}
               <div className="relative z-0 flex items-center justify-center py-4">
-                <EggTray />
+                <EggTray trayContainerRef={trayContainerRef} />
               </div>
             </div>
           </div>
