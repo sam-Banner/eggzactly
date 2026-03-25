@@ -2,18 +2,11 @@ import { useState } from 'react';
 import { useMessContext } from '@/context/MessContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { RotateCcw, UserPlus, IndianRupee } from 'lucide-react';
+import { RotateCcw, IndianRupee } from 'lucide-react';
 
 const TrayControls = () => {
-  const { group, setTrayPrice, resetTray, addMember, members, pricePerEgg } = useMessContext();
-  const [newName, setNewName] = useState('');
+  const { group, setTrayPrice, resetTray, members, pricePerEgg } = useMessContext();
   const [priceInput, setPriceInput] = useState(group.trayPrice.toString());
-
-  const handleAddMember = () => {
-    if (!newName.trim()) return;
-    addMember(newName.trim(), '');
-    setNewName('');
-  };
 
   const handlePriceUpdate = () => {
     const p = parseFloat(priceInput);
@@ -45,23 +38,6 @@ const TrayControls = () => {
           />
           <Button size="sm" onClick={handlePriceUpdate} className="shrink-0">
             Set
-          </Button>
-        </div>
-      </div>
-
-      {/* Add member */}
-      <div className="bg-card rounded-xl p-4 shadow-sm border border-border space-y-2">
-        <label className="text-xs font-medium text-muted-foreground">Add Member</label>
-        <div className="flex gap-2">
-          <Input
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="Name"
-            className="h-9"
-            onKeyDown={(e) => e.key === 'Enter' && handleAddMember()}
-          />
-          <Button size="sm" onClick={handleAddMember} className="shrink-0">
-            <UserPlus className="h-4 w-4" />
           </Button>
         </div>
       </div>

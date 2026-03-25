@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, useCallback, useRef, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 export interface Member {
   id: string;
@@ -34,7 +36,6 @@ interface MessContextType {
   eggs: Egg[];
   currentUserId: string;
   setTrayPrice: (price: number) => void;
-  addMember: (name: string, color: string) => void;
   removeMember: (id: string) => void;
   incrementEgg: (memberId: string) => void;
   decrementEgg: (memberId: string) => void;
@@ -68,28 +69,48 @@ export const useMessContext = () => {
   return ctx;
 };
 
-const defaultMembers: Member[] = [
-  { id: '1', name: 'Rahul', color: MEMBER_COLORS[0], pattern: 'striped', eggsEaten: 0, role: 'admin' },
-  { id: '2', name: 'Priya', color: MEMBER_COLORS[1], pattern: 'dotted', eggsEaten: 0, role: 'member' },
-  { id: '3', name: 'Amit', color: MEMBER_COLORS[2], pattern: 'striped', eggsEaten: 0, role: 'member' },
-];
-
 export const MessProvider = ({ children }: { children: ReactNode }) => {
-  const [group, setGroup] = useState<Group>({ id: '1', name: 'Hostel Mess', trayPrice: 210 });
-  const [members, setMembers] = useState<Member[]>(defaultMembers);
+  const { user } = useAuth();
+  
+  const [group, setGroup] = useState<Group>({ id: '', name: 'My Mess', trayPrice: 0 });
+  const [members, setMembers] = useState<Member[]>([]);
   const [eggs, setEggs] = useState<Egg[]>(createInitialEggs);
   const [lastEatEvent, setLastEatEvent] = useState<EatEvent | null>(null);
-  const currentUserId = '1';
+  
+  const currentUserId = user?.id || '';
 
-  const pricePerEgg = group.trayPrice / 30;
+  const pricePerEgg = group.trayPrice > 0 ? group.trayPrice / 30 : 0;
+
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      try {
+        const { data, error } = await supabase.from('profiles').select('*');
+        if (error) {
+          console.error("Error fetching profiles:", error);
+          return;
+        }
+        
+        if (data) {
+          const fetchedMembers: Member[] = data.map((profile: any, index: number) => ({
+            id: profile.id,
+            name: profile.name || profile.email.split('@')[0], 
+            color: MEMBER_COLORS[index % MEMBER_COLORS.length],
+            pattern: 'striped',
+            eggsEaten: 0,
+            role: profile.id === currentUserId ? 'admin' : 'member'
+          }));
+          setMembers(fetchedMembers);
+        }
+      } catch (e) {
+        console.error("Supabase config or fetch failed", e);
+      }
+    };
+
+    fetchProfiles();
+  }, [currentUserId]);
 
   const setTrayPrice = useCallback((price: number) => {
     setGroup(g => ({ ...g, trayPrice: price }));
-  }, []);
-
-  const addMember = useCallback((name: string, color: string) => {
-    const id = Date.now().toString();
-    setMembers(m => [...m, { id, name, color: color || MEMBER_COLORS[m.length % MEMBER_COLORS.length], pattern: 'striped', eggsEaten: 0, role: 'member' }]);
   }, []);
 
   const removeMember = useCallback((id: string) => {
@@ -141,7 +162,7 @@ export const MessProvider = ({ children }: { children: ReactNode }) => {
   return (
     <MessContext.Provider value={{
       group, members, eggs, currentUserId,
-      setTrayPrice, addMember, removeMember,
+      setTrayPrice, removeMember,
       incrementEgg, decrementEgg, confirmEgg, resetTray, pricePerEgg,
       lastEatEvent,
     }}>

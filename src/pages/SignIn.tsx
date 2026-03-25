@@ -17,11 +17,53 @@ const signInSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
+const signUpSchema = signInSchema.extend({
+  name: z.string().min(1, 'Name is required'),
+});
+
 type SignInForm = z.infer<typeof signInSchema>;
+type SignUpForm = z.infer<typeof signUpSchema>;
 
 const SignIn = () => {
   const navigate = useNavigate();
-  const { signIn, user, isLoading } = useAuth();
+  const { signIn, signUp, user, isLoading } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<SignUpForm>({
+    resolver: zodResolver(isSignUp ? signUpSchema : signInSchema),
+    defaultValues: { email: '', password: '', name: '' },
+  });
+
+  const onSubmit = async (data: SignUpForm) => {
+    setIsSubmitting(true);
+    let authError: Error | null = null;
+
+    if (isSignUp) {
+      if (!data.name) return; // Prevent TS complaining, handled by Zod
+      const { error } = await signUp(data.email, data.password, data.name);
+      authError = error;
+    } else {
+      const { error } = await signIn(data.email, data.password);
+      authError = error;
+    }
+
+    setIsSubmitting(false);
+
+    if (authError) {
+      toast.error(authError.message);
+      return;
+    }
+    toast.success(isSignUp ? 'Signed up successfully! Please check your email' : 'Signed in successfully');
+    if (!isSignUp) {
+      navigate('/', { replace: true });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -31,29 +73,6 @@ const SignIn = () => {
     );
   }
   if (user) return <Navigate to="/" replace />;
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<SignInForm>({
-    resolver: zodResolver(signInSchema),
-    defaultValues: { email: '', password: '' },
-  });
-
-  const onSubmit = async (data: SignInForm) => {
-    setIsSubmitting(true);
-    const { error } = await signIn(data.email, data.password);
-    setIsSubmitting(false);
-
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success('Signed in successfully');
-    navigate('/', { replace: true });
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -63,10 +82,27 @@ const SignIn = () => {
             <Egg className="h-6 w-6 text-primary-foreground" />
           </div>
           <CardTitle className="text-2xl">EggTracker</CardTitle>
-          <CardDescription>Sign in to track your mess egg consumption</CardDescription>
+          <CardDescription>
+            {isSignUp ? 'Create an account to track your mess eggs' : 'Sign in to track your mess egg consumption'}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {isSignUp && (
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Rahul Kumar"
+                  autoComplete="name"
+                  {...register('name')}
+                />
+                {errors.name && (
+                  <p className="text-sm text-destructive">{errors.name.message}</p>
+                )}
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -94,9 +130,27 @@ const SignIn = () => {
               )}
             </div>
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Signing in...' : 'Sign in'}
+              {isSubmitting
+                ? (isSignUp ? 'Signing up...' : 'Signing in...')
+                : (isSignUp ? 'Sign up' : 'Sign in')}
             </Button>
           </form>
+
+          <div className="mt-4 text-center text-sm">
+            <span className="text-muted-foreground">
+              {isSignUp ? 'Already have an account? ' : "Don't have an account? "}
+            </span>
+            <Button
+              variant="link"
+              className="p-0"
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                reset();
+              }}
+            >
+              {isSignUp ? 'Sign in' : 'Sign up'}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
