@@ -36,6 +36,8 @@ This creates:
 - **profiles** – user id, email, name (extends auth.users)
 - **egg_tray** – id, created_at, price, eggs_remaining
 - **tray_consumption** – tray_id, user_id, eggs_consumed
+- **tray_wastage** – tray_id, wasted_eggs (single row per tray)
+- **tray_log** – date, tray_id, qty, user_id, note
 
 ## 5. Enable Email/Password Auth
 
