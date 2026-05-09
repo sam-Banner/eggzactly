@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 
 const TrayControls = () => {
-  const { group, createNewTray, members, pricePerEgg } = useMessContext();
+  const { group, createNewTray, members, pricePerEgg, totalWastedEggs } = useMessContext();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newPrice, setNewPrice] = useState('');
   const [isCreating, setIsCreating] = useState(false);
@@ -43,6 +43,8 @@ const TrayControls = () => {
             <IndianRupee className="h-3.5 w-3.5" />
             <span>{pricePerEgg.toFixed(1)} / egg</span>
           </div>
+          <span className="mx-1">·</span>
+          <span>{totalWastedEggs} wasted</span>
           <span className="mx-1">·</span>
           <span>{members.length} members</span>
         </div>

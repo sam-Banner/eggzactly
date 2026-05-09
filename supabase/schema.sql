@@ -102,3 +102,61 @@ CREATE POLICY "Authenticated users can update tray consumption"
   TO authenticated
   USING (true)
   WITH CHECK (true);
+
+-- =============================================================================
+-- TRAY_WASTAGE (tracks wasted eggs per tray)
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS public.tray_wastage (
+  tray_id UUID PRIMARY KEY REFERENCES public.egg_tray(id) ON DELETE CASCADE,
+  wasted_eggs INTEGER NOT NULL DEFAULT 0 CHECK (wasted_eggs >= 0 AND wasted_eggs <= 30)
+);
+
+-- RLS
+ALTER TABLE public.tray_wastage ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authenticated users can read tray wastage"
+  ON public.tray_wastage FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "Authenticated users can insert tray wastage"
+  ON public.tray_wastage FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
+
+CREATE POLICY "Authenticated users can update tray wastage"
+  ON public.tray_wastage FOR UPDATE
+  TO authenticated
+  USING (true)
+  WITH CHECK (true);
+
+-- =============================================================================
+-- TRAY_LOG (tracks quantity/note entries per tray)
+-- Columns requested: date, tray_id, qty, user_id, note
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS public.tray_log (
+  date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  tray_id UUID NOT NULL REFERENCES public.egg_tray(id) ON DELETE CASCADE,
+  qty INTEGER NOT NULL CHECK (qty > 0),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  note TEXT NOT NULL DEFAULT ''
+);
+
+-- RLS
+ALTER TABLE public.tray_log ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authenticated users can read tray log"
+  ON public.tray_log FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "Authenticated users can insert tray log"
+  ON public.tray_log FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
+
+CREATE POLICY "Authenticated users can update tray log"
+  ON public.tray_log FOR UPDATE
+  TO authenticated
+  USING (true)
+  WITH CHECK (true);
